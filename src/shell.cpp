@@ -5,6 +5,8 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <unistd.h>
+#include <fstream>
 using namespace std;
 
 int MAX_USER_INPUT = 1000;
@@ -16,10 +18,17 @@ int main(int argc, char *argv[]) {
 	ShellMemory& shellMemory = ShellMemory::getInstance();
 	int errorCode = 0;					// zero means no error, default
 
-    char prompt = '$';  				// Shell prompt
 	string userInput;					// user's input stored here
+	char prompt = '$';  				// Shell prompt
 	while(1){
-		cout << prompt << ' ';
+		if (isatty(fileno(stdin))){
+			cout << prompt << ' ';
+		}
+		if (cin.eof()){
+			cin.clear();
+			freopen("/dev/tty","r", stdin);
+			continue;
+		}
 		getline(cin, userInput);
 		errorCode = parseInput(userInput);
 		if (errorCode == -1) exit(99);
@@ -29,14 +38,26 @@ int main(int argc, char *argv[]) {
 
 int parseInput(string ui){
 	int errorCode = 0;
-	vector<string> words;
+	vector<string> command;
 	stringstream ss(ui);
 	string word;
 	int w=0;
 	while(ss >> word){
-		words.push_back(word);
 		w++;
+
+		//If ";" is encoutered, execute command and start a new one
+		if (word[word.length()-1] == ';'){
+			command.push_back(word.substr(0, word.length()-1));
+			errorCode = interpreter(command, w);
+			if (errorCode != 0) return errorCode;
+			command.clear();
+			w=0;
+			
+		//Else, just add the current word to the command
+		} else {
+			command.push_back(word);
+		}
 	}
-	errorCode = interpreter(words, w);
+	errorCode = interpreter(command, w);
 	return errorCode;
 }

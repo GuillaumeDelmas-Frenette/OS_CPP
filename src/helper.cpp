@@ -8,3 +8,12 @@ bool strCaseCompare(const string& str1, const string& str2) {
 	transform(str2Lower.begin(), str2Lower.end(), str2Lower.begin(), ::tolower);
     return str1Lower == str2Lower;
 }
+
+bool containsMultipleWords(const string& str){
+	for (char c : str) {
+        if (isspace(c)) {
+            return true;
+        }
+    }
+    return false;
+}
